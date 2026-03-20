@@ -7,10 +7,15 @@ from schemas import *
 from utils import hash_password, verify_password
 from auth import create_token, decode_token
 from fastapi import HTTPException
+from fastapi.responses import RedirectResponse
 app = FastAPI()
 security = HTTPBearer()
 
 
+
+@app.get("/")
+def root():
+    return RedirectResponse(url="/docs")
 # ================= AUTH ================= #
 
 @app.post("/register")
