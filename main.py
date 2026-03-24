@@ -16,12 +16,12 @@ security = HTTPBearer()
 @app.get("/")
 def root():
     return RedirectResponse(url="/docs")
-# ================= AUTH ================= #
+
 
 @app.post("/register")
 def register(user: UserRegister):
     
-    # Manual validation
+   
     if not user.email or user.email.strip() == "":
         raise HTTPException(status_code=400, detail="Email is required")
 
@@ -62,7 +62,7 @@ def login(user: UserLogin):
     return {"access_token": token}
 
 
-# ================= AUTH CHECK ================= #
+
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
@@ -74,7 +74,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     return payload["user_id"]
 
 
-# ================= EVENTS ================= #
 
 @app.post("/events")
 def create_event(event: EventCreate, user_id: int = Depends(get_current_user)):
@@ -107,14 +106,14 @@ def get_events(
     query = "SELECT * FROM events WHERE user_id=%s"
     params = [user_id]
 
-    #  STATUS FILTER
+    
     if status:
         if status not in ["pending", "done", "cancelled"]:
             raise HTTPException(400, "Invalid status")
         query += " AND status=%s"
         params.append(status)
 
-    #  TIME FILTER
+    
     if time_filter:
         now = datetime.now()
         if time_filter == "upcoming":
@@ -126,13 +125,13 @@ def get_events(
         else:
             raise HTTPException(400, "Invalid time filter")
 
-    #  SEARCH
+    
     if search:
         query += " AND (title LIKE %s OR description LIKE %s)"
         params.append(f"%{search}%")
         params.append(f"%{search}%")
 
-    #  SORTING
+   
     allowed_sort_fields = ["event_time", "created_at", "status"]
     if sort_by not in allowed_sort_fields:
         raise HTTPException(400, "Invalid sort field")
@@ -142,7 +141,7 @@ def get_events(
 
     query += f" ORDER BY {sort_by} {order}"
 
-    #  PAGINATION
+    
     offset = (page - 1) * limit
     query += " LIMIT %s OFFSET %s"
     params.extend([limit, offset])
@@ -179,7 +178,7 @@ def delete_event(event_id: int, user_id: int = Depends(get_current_user)):
     return {"message": "Event deleted"}
 
 
-# ================= REMINDERS ================= #
+
 
 @app.post("/reminders")
 def create_reminder(rem: ReminderCreate, user_id: int = Depends(get_current_user)):
@@ -264,7 +263,7 @@ def update_event_status(event_id: int, status: str, user_id: int = Depends(get_c
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # get event
+    
     cursor.execute("SELECT * FROM events WHERE id=%s AND user_id=%s", (event_id, user_id))
     event = cursor.fetchone()
 
@@ -273,7 +272,7 @@ def update_event_status(event_id: int, status: str, user_id: int = Depends(get_c
 
     current_status = event["status"]
 
-    #  prevent invalid transitions
+   
     if current_status == "done":
         raise HTTPException(status_code=400, detail="Already completed")
 
@@ -283,7 +282,7 @@ def update_event_status(event_id: int, status: str, user_id: int = Depends(get_c
     if status not in ["done", "pending", "cancelled"]:
         raise HTTPException(status_code=400, detail="Invalid status")
 
-    # update
+   
     cursor.execute(
         "UPDATE events SET status=%s WHERE id=%s",
         (status, event_id)
@@ -321,3 +320,4 @@ def update_reminder_status(reminder_id: int, status: str, user_id: int = Depends
     conn.commit()
 
     return {"message": f"Reminder marked as {status}"}
+    
